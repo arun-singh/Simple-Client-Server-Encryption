@@ -1,0 +1,46 @@
+README
+
+This was developed on a MAC OSX 10.9 and uses Common Crypto for encryption
+
+Notes: 
+- Run the make file to get the client and server programs.
+- I could only test the server on loopback but it 'should' work over a normal network.
+
+Server Notes
+-------------
+
+1. File has limit of 8MB (Realloc kept messing up my hash and couldn't figure out why :( ) - this can be changed in server.c if needed  
+2. Each read from client has a timeout (check code to see why)
+3. Usage: server <portno>
+
+Program Flow
+
+1. Create and bind socket - initiateServer()
+2. Listen for connections in infinite loop
+3. Fork on new connection - processFile()
+	4. Create hash (uses SHA256)
+	5. Read until no data left (or timeout trigures)
+	6. Update hash for every read
+	7. Send hash back to client
+	8. Use shutdown to prevent further writes
+	9. Wait from response from client (5 second timeout)
+
+
+Client Notes (If using to test)
+------------
+
+1. Usage: client <hostname> <portno> <filetoencrypt>
+2. File size limit of 8MB
+3. Refrain from creating files using dd 'if=/dev/zero ... ' as fread does not work for some reason (use truncate instead)
+
+Program Flow
+
+1. Retrieve hostname and portno and assign file to encrypt
+2. Set up socket
+3. Connect to host
+4. Read file into buffer
+5. Send file to server
+6. Create local hash of file
+7. Read encrypted file from server
+8. Compare local and received buffers
+9. Send back response to server indicating whether buffers match
